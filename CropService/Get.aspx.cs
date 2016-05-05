@@ -64,15 +64,16 @@ namespace CropService
                 // if the remote file was found, download it
                 using (Stream inputStream = response.GetResponseStream())
                 {
+                    // assume the loaded stream is an image pull the stream into the image.
                     using (Bitmap loadedImage = (Bitmap)System.Drawing.Image.FromStream(inputStream))
                     {
-                        // calculating x, y offsets and width and height
+                        // calculating x, y offsets and width and height in pixels
                         int width = (int)Math.Ceiling(loadedImage.Width * (right_x - left_x));
                         int x = (int)Math.Floor(loadedImage.Width * left_x);
                         int height = (int)Math.Ceiling(loadedImage.Height * (bottom_y - top_y));
                         int y = (int)Math.Floor(loadedImage.Height * top_y);
-
-                        using (Bitmap workingImage = new Bitmap(width, height))
+                        // use existing image to maintain the graphics structure.
+                        using (Bitmap workingImage = new Bitmap(loadedImage, width, height))
                         {
                             // Manipulating image here.
                             using (Graphics graphic = Graphics.FromImage(workingImage))
@@ -86,7 +87,7 @@ namespace CropService
                                 //Code used to crop
                                 graphic.DrawImage(loadedImage, 0, 0, new Rectangle(x, y, width, height), GraphicsUnit.Pixel);
                             }
-                            // returning as a JPG stream
+                            // returning as a JPG stream and end!
                             this.Response.Clear();
                             this.Response.StatusCode = 200;
                             workingImage.Save(this.Response.OutputStream, ImageFormat.Jpeg);
