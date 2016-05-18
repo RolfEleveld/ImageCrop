@@ -15,36 +15,34 @@ namespace CropService
 {
     public partial class Get : System.Web.UI.Page
     {
-        internal string GetUriFromParameters()
+        internal string GetFromParameters(string parameter)
         {
-            return this.Request.QueryString.GetValues("img").First();
+            var value = Request.QueryString.GetValues(parameter);
+            if (value != null)
+            {
+                return value.First();
+            }
+            return null;
         }
-        internal Double GetLeftFromParameters()
+        internal Double GetFromParameters(string parameter, double defaultvalue)
         {
-            return Double.Parse(this.Request.QueryString.GetValues("left_x").First());
+            var value = Request.QueryString.GetValues(parameter);
+            Double valueDouble;
+            if (value != null && Double.TryParse(value.First(), out valueDouble))
+            {
+                return valueDouble;
+            }
+            return defaultvalue;
         }
-        internal Double GetTopFromParameters()
-        {
-            return Double.Parse(this.Request.QueryString.GetValues("top_y").First());
-        }
-        internal Double GetRightFromParameters()
-        {
-            return Double.Parse(this.Request.QueryString.GetValues("right_x").First());
-        }
-        internal Double GetBottomFromParameters()
-        {
-            return Double.Parse(this.Request.QueryString.GetValues("bottom_y").First());
-        }
-
-        protected void Page_Load(object sender, EventArgs e)
+        protected async void Page_Load(object sender, EventArgs e)
         {
             double left_x, top_y, right_x, bottom_y;
-            left_x = GetLeftFromParameters();
-            top_y = GetTopFromParameters();
-            right_x = GetRightFromParameters();
-            bottom_y = GetBottomFromParameters();
+            left_x = GetFromParameters("left_x", 0);
+            top_y = GetFromParameters("top_y", 0);
+            right_x = GetFromParameters("right_x", 1);
+            bottom_y = GetFromParameters("bottom_y", 1);
 
-            String imageUri = GetUriFromParameters();
+            String imageUri = GetFromParameters("img");
             HttpResponseMessage content = new HttpResponseMessage();
             if (string.IsNullOrWhiteSpace(imageUri))
             {
@@ -54,50 +52,56 @@ namespace CropService
             {
                 throw new FormatException("The scale needs to be between 0.0 and 1.0 for each of the crop factors, and left is less than right and top needs to be less than bottom");
             }
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(imageUri);
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            if ((response.StatusCode == HttpStatusCode.OK ||
-                response.StatusCode == HttpStatusCode.Moved ||
-                response.StatusCode == HttpStatusCode.Redirect) &&
-                response.ContentType.StartsWith("image", StringComparison.OrdinalIgnoreCase))
+
+            WebRequest request = WebRequest.Create(imageUri);
+            try
             {
-                // if the remote file was found, download it
-                using (Stream inputStream = response.GetResponseStream())
+                WebResponse response = await request.GetResponseAsync();
+                if (response.ContentType.StartsWith("image", StringComparison.OrdinalIgnoreCase))
                 {
-                    // assume the loaded stream is an image pull the stream into the image.
-                    using (Bitmap loadedImage = (Bitmap)System.Drawing.Image.FromStream(inputStream))
+                    // if the remote file was found, download it
+                    using (Stream inputStream = response.GetResponseStream())
                     {
-                        // calculating x, y offsets and width and height in pixels
-                        int width = (int)Math.Ceiling(loadedImage.Width * (right_x - left_x));
-                        int x = (int)Math.Floor(loadedImage.Width * left_x);
-                        int height = (int)Math.Ceiling(loadedImage.Height * (bottom_y - top_y));
-                        int y = (int)Math.Floor(loadedImage.Height * top_y);
-                        // use existing image to maintain the graphics structure.
-                        using (Bitmap workingImage = new Bitmap(loadedImage, width, height))
+                        // assume the loaded stream is an image pull the stream into the image.
+                        using (Bitmap loadedImage = (Bitmap)System.Drawing.Image.FromStream(inputStream))
                         {
-                            // Manipulating image here.
-                            using (Graphics graphic = Graphics.FromImage(workingImage))
+                            // calculating x, y offsets and width and height in pixels
+                            int width = (int)Math.Ceiling(loadedImage.Width * (right_x - left_x));
+                            int x = (int)Math.Floor(loadedImage.Width * left_x);
+                            int height = (int)Math.Ceiling(loadedImage.Height * (bottom_y - top_y));
+                            int y = (int)Math.Floor(loadedImage.Height * top_y);
+                            // use existing image to maintain the graphics structure.
+                            using (Bitmap workingImage = new Bitmap(loadedImage, width, height))
                             {
-                                graphic.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                                graphic.SmoothingMode = SmoothingMode.HighQuality;
-                                graphic.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                                graphic.CompositingQuality = CompositingQuality.HighQuality;
-                                graphic.CompositingMode = CompositingMode.SourceOver;
-                                graphic.Clear(Color.White);
-                                //Code used to crop
-                                graphic.DrawImage(loadedImage, 0, 0, new Rectangle(x, y, width, height), GraphicsUnit.Pixel);
+                                // Manipulating image here.
+                                using (Graphics graphic = Graphics.FromImage(workingImage))
+                                {
+                                    graphic.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                                    graphic.SmoothingMode = SmoothingMode.HighQuality;
+                                    graphic.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                                    graphic.CompositingQuality = CompositingQuality.HighQuality;
+                                    graphic.CompositingMode = CompositingMode.SourceOver;
+                                    graphic.Clear(Color.White);
+                                    //Code used to crop
+                                    graphic.DrawImage(loadedImage, 0, 0, new Rectangle(x, y, width, height), GraphicsUnit.Pixel);
+                                }
+                                // returning as a JPG stream and end!
+                                Response.Clear();
+                                Response.StatusCode = 200;
+                                workingImage.Save(Response.OutputStream, ImageFormat.Jpeg);
+                                Response.ContentType = "image/jpeg";
+                                Response.Flush();
+                                Response.End();
                             }
-                            // returning as a JPG stream and end!
-                            this.Response.Clear();
-                            this.Response.StatusCode = 200;
-                            workingImage.Save(this.Response.OutputStream, ImageFormat.Jpeg);
-                            this.Response.ContentType = "image/jpeg";
-                            this.Response.Flush();
-                            this.Response.End();
                         }
                     }
                 }
             }
+            catch
+            {
+                throw new FieldAccessException("Image could not be processed");
+            }
+
         }
     }
 }

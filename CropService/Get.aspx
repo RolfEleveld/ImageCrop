@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Get.aspx.cs" Inherits="CropService.Get" %>
+﻿<%@ Page Language="C#" Async="true" AutoEventWireup="true" CodeBehind="Get.aspx.cs" Inherits="CropService.Get" %>
 
 <!DOCTYPE html>
 
@@ -7,10 +7,6 @@
     <title></title>
 </head>
 <body>
-    <form id="form1" runat="server">
-    <div>
-    
-    </div>
-    </form>
+    This is a service
 </body>
 </html>

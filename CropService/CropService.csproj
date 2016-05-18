@@ -100,6 +100,7 @@
     <Content Include="ApplicationInsights.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Include="Properties\PublishProfiles\CropServiceUsingBasicWeb - Web Deploy.pubxml" />
     <None Include="Properties\PublishProfiles\CropServiceUsingBasicWeb.pubxml" />
     <Content Include="Service References\Application Insights\ConnectedService.json" />
     <None Include="Web.Debug.config">
