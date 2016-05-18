@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -7,10 +6,12 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Web;
-using System.Web.UI;
-using System.Web.UI.WebControls;
 
+/// <summary>
+/// Deply this with certificate
+/// Use Password 4 Cropservice using basic web together.
+/// </summary>
+/// <see cref="https://azure.microsoft.com/en-us/documentation/articles/app-service-web-arm-with-msdeploy-provision/"/>
 namespace CropService
 {
     public partial class Get : System.Web.UI.Page
