@@ -72,7 +72,7 @@ namespace CropService
                             int height = (int)Math.Ceiling(loadedImage.Height * (bottom_y - top_y));
                             int y = (int)Math.Floor(loadedImage.Height * top_y);
                             // use existing image to maintain the graphics structure.
-                            using (Bitmap workingImage = new Bitmap(loadedImage, width, height))
+                            using (Bitmap workingImage = loadedImage.Clone(new Rectangle(x, y, width, height), loadedImage.PixelFormat))
                             {
                                 // Manipulating image here.
                                 using (Graphics graphic = Graphics.FromImage(workingImage))
